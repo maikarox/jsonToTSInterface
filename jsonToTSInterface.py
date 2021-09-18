@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
-import sys
-import requests
+import getopt
 import json
 import random
+import requests
+import sys
 
 class Switch:
 	def __init__(self, variable):
@@ -89,49 +90,52 @@ def processList(dataList):
 
 def help():
     print('Available commands: ')
-    print('--help, -h: list of available commands')
-    print('--url, -u: api url from where to get the data')
-    print('--file, -f: gets the data from a file')
-    print('example 1: python jsonToTSInterface.py -fromFile ./file.json')
-    print('example 2: python jsonToTSInterface.py -url "https://some-api"')
-    print('example 3: python jsonToTSInterface.py -url "https://some-api" "output-file-name.ts"')
+    print('-h, --help: List of available commands')
+    print('-u, --url: API url')
+    print('-f, --file: Source JSON file')
+    print('-o, --output: Output file name')
+    print('Usage:')
+    print('python ./jsonToTSInterface.py -f ./file.json')
+    print('python ./jsonToTSInterface.py --file ./file.json')
+    print('python ./jsonToTSInterface.py -url "https://some-api"')
+    print('python ./jsonToTSInterface.py -u "https://some-api" -o "output-file-name.ts"')
+    exit()
 
 def main():
-    if len(sys.argv) < 2:
-        print('Indicate where to get the json data')
-        print('or run python dataTypesFromJson.py --help')
-        exit()
-
-    command = sys.argv[1]
-    data_source = sys.argv[2]
-
-    if command == '--help' or command == '-h':
+    if sys.argv[1] in ['--help', '-h']:
         help()
 
+    options, args = getopt.getopt(sys.argv[1:], 'u:f:o:', ['url=', 'file=', 'output='])
+    
+    if len(options) == 0:
+        print('Indicate the json source')
+        print('or run --help for help.')
+        exit()
+
     format = 'interface Interface '
-    
-    if command == '--url':
-        format += getJSONFromAPI(data_source)
-
-    if command == '--file':
-        format += getJSONfromFile(data_source)
-    
-    format += '\n'
-
-    print('Creating interface...')
 
     outputFile = 'output.ts'
 
-    if len(sys.argv) >= 4:
-        outputFile = sys.argv[3]
+    for opt, arg in options:
+        if opt in ['-h', '--help']:
+            help()
+        elif opt in ['-u', '--url']:
+            format += getJSONFromAPI(arg)
+        elif opt in ['-f', '--file']:
+            format += getJSONfromFile(arg)
+            
+        if opt in ['-o', '--output']:
+            outputFile = arg
+
+    format += '\n'
     
     with open(outputFile, 'w') as file:
+        print('Creating interface...')
         file.write(format)
-    
-    print('Interface created')
+        print('Interface created.')
 
 try: 
     main()
 except:
-    print('See how to run it with --help')
+    print('Run --help for help.')
     sys.exit(0)
